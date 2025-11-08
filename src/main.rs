@@ -3,7 +3,7 @@ use winapi::shared::minwindef::BOOL;
 use winapi::shared::windef::{POINT, RECT, HMONITOR, HDC};
 use winapi::um::winuser::{
     GetCursorPos, ClipCursor, MonitorFromPoint, GetMonitorInfoW, MONITORINFO,
-    MONITOR_DEFAULTTONEAREST, GetAsyncKeyState, VK_CONTROL, VK_F11, EnumDisplayMonitors,
+    MONITOR_DEFAULTTONEAREST, GetAsyncKeyState, VK_CONTROL, VK_F11, VK_LMENU, EnumDisplayMonitors,
 };
 
 #[derive(Clone)]
@@ -165,7 +165,10 @@ fn main() {
         }
 
         let ctrl_pressed = unsafe { (GetAsyncKeyState(VK_CONTROL) as i16) < 0 };
+        let lalt_pressed = unsafe { (GetAsyncKeyState(VK_LMENU) as i16) < 0 };
         let f11_pressed = unsafe { (GetAsyncKeyState(VK_F11) as i16) < 0 };
+
+        let release_key_pressed = ctrl_pressed || lalt_pressed;
 
         // Always reapply clipping if we're supposed to be clipped
         // This ensures it stays active even after alt-tab
@@ -175,12 +178,12 @@ fn main() {
             }
         }
 
-        if ctrl_pressed && !prev_ctrl {
-            // Ctrl key-down event
+        if release_key_pressed && !prev_ctrl {
+            // Release key-down event
             release_on_exit = true;
-            println!("Ctrl pressed: will release the clip the next time the cursor hits the monitor edge");
+            println!("Ctrl/Alt pressed: will release the clip the next time the cursor hits the monitor edge");
         }
-        prev_ctrl = ctrl_pressed;
+        prev_ctrl = release_key_pressed;
 
         // Handle monitor edge detection and release
         if let Some(rc) = &current_rect {
